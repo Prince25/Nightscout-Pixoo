@@ -2,13 +2,18 @@ from pixoo_helper import *
 from urllib.parse import urljoin
 
 
+# Hide TLS warnings: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#tls-warnings
+requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
+
+
 NIGHTSCOUT_URL = os.environ.get('NIGHTSCOUT_URL')
 NIGHTSCOUT_API = urljoin(NIGHTSCOUT_URL, '/api/v1/entries/sgv.json?count=2')
 SCREEN_TIME = os.environ.get('SCREEN_TIME')
 SCREEN_CENTER = (pixoo_screen_size - 1) // 2
 
-# Hide TLS warnings: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#tls-warnings
-requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
+if "http" not in NIGHTSCOUT_URL:
+    raise ValueError("NIGHTSCOUT_URL must start with 'http' or 'https'.")
+
 
 # Get JSON data from the API
 def get_data_from_NS():

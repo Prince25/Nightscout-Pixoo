@@ -15,7 +15,11 @@ from pixoo.pixoo import Channel, Pixoo
 
 
 # Load the environment variables
-load_dotenv(find_dotenv())
+dotenv_file = find_dotenv()
+if not dotenv_file:
+    raise FileNotFoundError('No .env file found.')
+load_dotenv(dotenv_file, override=True)
+
 pixoo_host = os.environ.get('PIXOO_HOST')
 pixoo_screen_size = int(os.environ.get('PIXOO_SCREEN_SIZE'))
 retry_delay = os.environ.get('PIXOO_RETRY_DELAY')
