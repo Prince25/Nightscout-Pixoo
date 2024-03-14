@@ -1,0 +1,20 @@
+name: Publish image to Docker Hub
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+    - name: build
+      run: docker build . --file Dockerfile --tag princes25/nightscout-pixoo:latest
+    - name: publish
+      run: |
+      docker login -u princes25 -p ${{ secrets.DOCKER_HUB_TOKEN }}
+      docker push princes25/nightscout-pixoo:latest
