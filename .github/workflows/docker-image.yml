@@ -16,5 +16,5 @@ jobs:
       run: docker build . --file Dockerfile --tag princes25/nightscout-pixoo:latest
     - name: publish
       run: |
-      docker login -u princes25 -p ${{ secrets.DOCKER_HUB_TOKEN }}
-      docker push princes25/nightscout-pixoo:latest
+        docker login -u princes25 -p ${{ secrets.DOCKER_HUB_TOKEN }}
+        docker push princes25/nightscout-pixoo:latest
