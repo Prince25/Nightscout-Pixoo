@@ -1,6 +1,8 @@
 # Nightscout -> Pixoo
 This app displays blood glucose data from Nightscout to a Pixoo device.
 
+<img alt="Image of Pixoo 64 running Nightscout -> Pixoo" src="https://i.imgur.com/NBu0EcV.jpeg" width="400">
+
 
 ## Introduction
 **Nightscout -> Pixoo** makes use of the great [Pixoo Python library](https://github.com/SomethingWithComputers/pixoo) by [SomethingWithComputers](https://github.com/SomethingWithComputers); which offers various helpful features like automatic image conversion. :thumbsup:
@@ -23,6 +25,9 @@ See [`.env-example`](.env-example) for necessary variables. Rename `.env-example
 NIGHTSCOUT_URL=
 PIXOO_HOST=
 ```
+
+- `NIGHTSCOUT_URL` is the URL to your Nightscout instance, e.g., `https://your-nightscout.herokuapp.com` or `http://192.168.1.116:4321` (IP:Port) if local.
+- `PIXOO_HOST` is the IP address of your Pixoo device, e.g., `192.168.1.144`
 
 
 ## Usage
@@ -47,6 +52,7 @@ Create a virtual environment and activate it (optional; but recommended):
 ```bash
 python -m venv venv
 . venv/bin/activate
+venv\Scripts\activate (Windows)
 ```
 
 Install all dependencies:
@@ -59,6 +65,9 @@ Finally, run the app:
 ```bash
 python src/app.py
 ```
+
+#### Troubleshooting
+If you get the error `ModuleNotFoundError: No module named 'tkinter'` on Windows, look at [this](https://stackoverflow.com/a/59970646/13915206).
 
 
 ### Containerized
