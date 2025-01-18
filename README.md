@@ -1,7 +1,7 @@
 # Nightscout -> Pixoo
 This app displays blood glucose data from Nightscout to a Pixoo device.
 
-<img alt="Image of Pixoo 64 running Nightscout -> Pixoo" src="https://i.imgur.com/NBu0EcV.jpeg" width="400">
+<img alt="Image of Pixoo 64 running Nightscout -&gt Pixoo" src="https://i.imgur.com/NBu0EcV.jpeg" width="400" />
 
 
 ## Introduction
