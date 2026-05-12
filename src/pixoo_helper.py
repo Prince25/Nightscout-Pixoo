@@ -1,8 +1,6 @@
 import os
 import sys
 import time
-import json
-import base64
 import requests
 from PIL import Image
 from datetime import datetime
@@ -45,7 +43,6 @@ pixoo = Pixoo(pixoo_host, pixoo_screen_size)
 """ Pixoo Helper Functions
 All "draw_" functions will draw to the screen buffer and not push the changes to the device unless the "push" parameter is set to True.
 
-brightness(percentage)
 generic_set_number(to_set, number)
     Sets channel, visualizer or clock to the specified number
     Available channels are: FACES (0), CLOUD (1), VISUALIZER (2), and CUSTOM (3, 4, and 5)
@@ -57,19 +54,10 @@ draw_border(top_left_x=0, top_left_y=0, bottom_right_x=pixoo_screen_size-1, bott
 draw_rectangle(top_left_x, top_left_y, bottom_right_x, bottom_right_y, r=255, g=255, b=255, push_now=False)
 draw_fill(r=0, g=0, b=0, push_now=False)
 draw_text(text, x=0, y=0, r=255, g=255, b=255, push_now=False)
-draw_image(path, x=0, y=0, push_now=False)
-draw_arrow(direction, start_x, start_y, length=7, r=255, g=255, b=255, tip_length_ratio=3, push_now=False):
+draw_image(filename, x=0, y=0, rotate=0, resize=(None, None), push_now=False)
+draw_arrow(type, start_x, start_y, length=8, r=255, g=255, b=255, push_now=False):
     Types: Flat, FortyFiveUp, FortyFiveDown, SingleUp, SingleDown, DoubleUp, DoubleDown
-send_gif(path, speed=100)
-    Higher speed = slower
-send_text(text, xy=(0, 0), color=(255, 255, 255), identifier=1, font=2, width=64)
-    Currently Unreliable
 """
-
-# Sets the brightness to the specified number
-def brightness(percentage):
-    pixoo.set_brightness(percentage)
-    return 'OK'
 
 
 # Sets channel, visualizer or clock to the specified number
@@ -198,15 +186,23 @@ def draw_text(text, x=0, y=0, r=255, g=255, b=255, push_now=False):
 
 
 # Draws the specified image at the specified position
-def draw_image(path, x=0, y=0, push_now=False):
-    path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'media', path))
-    image = Image.open(path)
+def draw_image(filename, x=0, y=0, rotate=0, resize=(None, None), push_now=False):
+    filename = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'assets', filename))
+    image = Image.open(filename)
 
-    # Convert PNG to RGBA if necessary
-    if path.endswith('.png'):
-        image = Image.open(path).convert('RGBA')
+    # Convert PNG to RGBA
+    if filename.endswith('.png'):
+        image = Image.open(filename).convert('RGBA')
         background = Image.new('RGBA', image.size, (0, 0, 0))
         image = Image.alpha_composite(background, image)
+        
+    # Rotate the image if needed
+    if rotate != 0:
+        image = image.rotate(rotate, expand=True)
+    
+    # Resize the image if needed
+    if resize != (None, None):
+        image = image.resize(resize, Image.BICUBIC)
 
     pixoo.draw_image_at_location(
         image,
@@ -220,147 +216,77 @@ def draw_image(path, x=0, y=0, push_now=False):
 
 # Draws an arrow on the screen based on the specified direction, position, length, and color
 # Types: Flat, FortyFiveUp, FortyFiveDown, SingleUp, SingleDown, DoubleUp, DoubleDown
-def draw_arrow(type, start_x, start_y, length=7, r=255, g=255, b=255, push_now=False):
-    if length <= 2: 
-        length = 3  # Minimum length is 3
-        print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | draw_arrow length too small. Setting to minimum length of 3.')
-
-    tip_length = int(length * (2/3) + 1)
-
-    # Make sure the arrow doesn't go off the screen
-    # TODO: Make this more robust or delete?
-    if start_x < 0 or start_x >= pixoo_screen_size:
-        start_x = 0
-        print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | draw_arrow x coordinate out of screen. Range: 0 - {pixoo_screen_size - 1}. Setting to 0.')
-    if start_y < 0 or start_y >= pixoo_screen_size:
-        start_y = 0
-        print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | draw_arrow y coordinate out of screen. Range: 0 - {pixoo_screen_size - 1}. Setting to 0.')
-
-    # if start_x - length < 0 or start_y - length < 0: # Up facing arrows
-    #     start_y = length
-    #     length = 7
-    #     print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | draw_arrow up length out of screen. Range: 0 - {pixoo_screen_size - 1}. Setting to defaults.')
-    # elif start_x + length > pixoo_screen_size or start_y + length > pixoo_screen_size: # Down facing arrows
-    #     start_x = start_y = 0
-    #     length = 7
-    #     print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | draw_arrow down length out of screen. Range: 0 - {pixoo_screen_size - 1}. Setting to defaults.')
+def draw_arrow(type, start_x, start_y, length=8, r=255, g=255, b=255, push_now=False):
+    if length < 8 or length > pixoo_screen_size: 
+        length = 8  # Minimum length is between 8 and the screen size
+        print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | draw_arrow length too small. Setting to minimum length of 8.')
 
     # Draw the arrow
     if type == 'Flat':
-        end_x = start_x + length
-        end_y = start_y
-        tip_length //= 1.5 # Make the tip a bit shorter
-        draw_line(start_x, start_y, end_x, end_y, r, g, b) # Horizontal line
-        draw_line(end_x, end_y, end_x - tip_length, end_y - tip_length, r, g, b) # Diagonal Up line
-        draw_line(end_x, end_y, end_x - tip_length, end_y + tip_length, r, g, b, push_now) # Diagonal Down line
+        draw_image('right_arrow.png', start_x, start_y, rotate=0, resize=(length, length), push_now=push_now)
 
     elif type == 'FortyFiveUp':
-        end_x = start_x + length
-        end_y = start_y - length
-        draw_line(start_x, start_y, end_x, end_y, r, g, b) # Diagonal line
-        draw_line(end_x, end_y, end_x, end_y + tip_length, r, g, b) # Vertical line
-        draw_line(end_x, end_y, end_x - tip_length, end_y, r, g, b, push_now) # Horizontal line
+        draw_image('upper_left_diagonal_arrow.png', start_x, start_y, rotate=0, resize=(length, length), push_now=push_now)
 
     elif type == 'FortyFiveDown':
-        end_x = start_x + length
-        end_y = start_y + length
-        draw_line(start_x, start_y, end_x, end_y, r, g, b) # Diagonal line
-        draw_line(end_x, end_y, end_x, end_y - tip_length, r, g, b) # Vertical line
-        draw_line(end_x, end_y, end_x - tip_length, end_y, r, g, b, push_now) # Horizontal line
+        draw_image('upper_left_diagonal_arrow.png', start_x, start_y, rotate=270, resize=(length, length), push_now=push_now)
 
     elif type == 'SingleUp':
-        end_x = start_x
-        end_y = start_y - length
-        tip_length //= 1.5 # Make the tip a bit shorter
-        draw_line(start_x, start_y, end_x, end_y, r, g, b) # Vertical line
-        draw_line(end_x, end_y, end_x - tip_length, end_y + tip_length, r, g, b) # Diagonal Left line
-        draw_line(end_x, end_y, end_x + tip_length, end_y + tip_length, r, g, b, push_now) # Diagonal Right line
+        draw_image('right_arrow.png', start_x, start_y, rotate=90, resize=(length, length), push_now=push_now)
 
     elif type == 'SingleDown':
-        end_x = start_x
-        end_y = start_y + length
-        tip_length //= 1.5 # Make the tip a bit shorter
-        draw_line(start_x, start_y, end_x, end_y, r, g, b) # Vertical line
-        draw_line(end_x, end_y, end_x - tip_length, end_y - tip_length, r, g, b) # Diagonal Left line
-        draw_line(end_x, end_y, end_x + tip_length, end_y - tip_length, r, g, b, push_now) # Diagonal Right line
+        draw_image('right_arrow.png', start_x, start_y, rotate=270, resize=(length, length), push_now=push_now)
 
     elif type == 'DoubleUp':
-        draw_arrow('SingleUp', start_x, start_y, length, r, g, b)
-        draw_arrow('SingleUp', start_x + tip_length + 1, start_y, length, r, g, b, push_now)
+        draw_image('up_double_arrow.png', start_x, start_y, rotate=0, resize=(length, length), push_now=push_now)
 
     elif type == 'DoubleDown':
-        draw_arrow('SingleDown', start_x, start_y, length, r, g, b)
-        draw_arrow('SingleDown', start_x + tip_length + 1, start_y, length, r, g, b, push_now)
+        draw_image('up_double_arrow.png', start_x, start_y, rotate=180, resize=(length, length))
 
     else:
-        draw_text('???', start_x, start_y, r, g, b, push_now)
+        draw_image('right_arrow.png', start_x, start_y, rotate=0, resize=(length, length), push_now=push_now)
 
 
-def _reset_gif():
-    return requests.post(f'http://{pixoo.address}/post', json.dumps({
-        "Command": "Draw/ResetHttpGifId"
-    })).json()
-
-def _send_gif(num, offset, width, speed, data):
-    return requests.post(f'http://{pixoo.address}/post', json.dumps({
-        "Command": "Draw/SendHttpGif",
-        "PicID": 1,
-        "PicNum": num,
-        "PicOffset": offset,
-        "PicWidth": width,
-        "PicSpeed": speed,
-        "PicData": data
-    })).json()
-
-# Draws a gif. Higher speed = slower.
-def send_gif(path, speed=100):
-    gif = Image.open(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'media', path)))
-    speed = int(speed)
-
-    if gif.is_animated:
-        _reset_gif()
-
-        for i in range(gif.n_frames):
-            gif.seek(i)
-
-            if gif.size not in ((16, 16), (32, 32), (64, 64)):
-                gif_frame = gif.resize((pixoo.size, pixoo.size)).convert("RGB")
-            else:
-                gif_frame = gif.convert("RGB")
-
-            _send_gif(
-                gif.n_frames,
-                i,
-                gif_frame.width,
-                speed,
-                base64.b64encode(gif_frame.tobytes()).decode("utf-8")
-            )
-    else:
-        pixoo.draw_image(gif)
-        push()
-
+# Debug function: draws vertical and horizontal lines every 8 pixels
+def debug_lines(push_now=False):
+    for i in range(0, pixoo_screen_size, 8):      
+        # Draw vertical lines
+        draw_line(i-1, 0, i-1, pixoo_screen_size - 1, 128, 128, 128)
+        draw_line(i, 0, i, pixoo_screen_size - 1, 128, 128, 128)
+        # Draw horizontal lines
+        draw_line(0, i-1, pixoo_screen_size - 1, i-1, 128, 128, 128)
+        draw_line(0, i, pixoo_screen_size - 1, i, 128, 128, 128)
+    
+    if push_now: push()
     return 'OK'
 
 
-'''
-NOTE: Currently Unreliable
-Send text to the display using (currently seemingly in alpha) text functionality
-def send_text(self, text, xy=(0, 0), color=(255, 255, 255), identifier=1, font=2, width=64,
-              movement_speed=0,
-              direction=TextScrollDirection.RIGHT):
-The first argument is the string to be displayed (required)
-The second argument is the position to place the string (optional, default (0, 0))
-the third argument is the color of the text (optional, default (255, 255, 255))
-The fourth is the text identifier. Use this to update existing text on the display (optional, default 1, has to be
-between 0 and 20)
-The fifth is the font identifier (optional, default 2, has to be between 0 and 7 but support seems limited for some fonts)
-The sixth argument is the width of the "textbox" (optional, default 64)
-The seventh argument is the movement speed of the text in case it doesn't fit the "textbox" (optional, default 0)
-    **NOTE:** Currently there seems to be no way to stop the movement
-The eight and final argument is the movement direction of the text (optional, default TextScrollDirection.LEFT)
-    **NOTE:** Currently TextScrollDirection.RIGHT seems broken on the display
-NOTE: Currently this is **not** a drawing method, so it'll add the text over whatever is already on screen
-'''
-def send_text(text, xy=(0, 0), color=(255, 255, 255), identifier=1, font=2, width=64):
-    pixoo.send_text(text, xy, color, identifier, font, width)
+# Debug function: draws pixels at the center and middle of each edge of the screen to help identify coordinates
+def debug_pixels(push_now=False):
+    center = (pixoo_screen_size - 1) // 2
+    max = pixoo_screen_size - 1
+    
+    # Top middle pixels
+    draw_pixel(center, 0, 255, 0, 0)
+    draw_pixel(center + 1, 0, 255, 0, 0)
+    
+    # Bottom middle pixels
+    draw_pixel(center, max, 255, 0, 0)
+    draw_pixel(center + 1, max, 255, 0, 0)
+    
+    # Left middle pixels
+    draw_pixel(0, center, 255, 0, 0)
+    draw_pixel(0, center + 1, 255, 0, 0)
+    
+    # Right middle pixels
+    draw_pixel(max, center, 255, 0, 0)
+    draw_pixel(max, center + 1, 255, 0, 0)
+    
+    # Center pixels
+    draw_pixel(center, center, 255, 0, 0)
+    draw_pixel(center + 1, center, 255, 0, 0)
+    draw_pixel(center, center + 1, 255, 0, 0)
+    draw_pixel(center + 1, center + 1, 255, 0, 0)
+    
+    if push_now: push()
     return 'OK'
