@@ -1,21 +1,23 @@
 import atexit
 from pixoo_helper import *
-from config import NIGHTSCOUT_URL, CHANNEL_TIME
 from urllib.parse import urljoin
+from config import (
+    CHANNEL_TIME,
+    DEBUG,
+    NIGHTSCOUT_URL,
+    SCREEN_CENTER,
+)
 
 
 # Hide TLS warnings: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#tls-warnings
 requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
+
 # Set channel to "Cloud" on exit
 @atexit.register
 def exit():
     generic_set_number("channel", 1)    # Change to "Cloud" channel
-    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Exiting: setting channel to "Cloud".')
-
-
-SCREEN_CENTER = (PIXOO_SCREEN_SIZE - 1) // 2
-DEBUG = False
+    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Exiting. Setting channel to "Cloud".')
 
 
 # Get JSON data from the API

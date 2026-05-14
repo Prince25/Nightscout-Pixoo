@@ -14,6 +14,11 @@ PIXOO_SCREEN_SIZE = int(os.environ.get('PIXOO_SCREEN_SIZE'))
 PIXOO_RETRY_DELAY = os.environ.get('PIXOO_RETRY_DELAY')
 NIGHTSCOUT_URL = os.environ.get('NIGHTSCOUT_URL')
 CHANNEL_TIME = os.environ.get('CHANNEL_TIME')
+DEBUG = os.environ.get('DEBUG')
+
+
+# Global constants
+SCREEN_CENTER = (PIXOO_SCREEN_SIZE - 1) // 2
 
 
 # Validation
