@@ -1,77 +1,103 @@
 import atexit
 from time import sleep
-from pixoo_helper import *
-from urllib.parse import urljoin
+from datetime import datetime
+
 from config import (
     CHANNEL_TIME,
     DEBUG,
     NIGHTSCOUT_URL,
+    PIXOO_HOST,
+    PIXOO_SCREEN_SIZE,
     SCREEN_CENTER,
 )
+from pixoo_helper import PixooDevice
+from nightscout import NightscoutClient
 
 
-# Hide TLS warnings: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#tls-warnings
-requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
-
-
-# Set channel to "Cloud" on exit
-@atexit.register
-def exit():
-    generic_set_number("channel", 1)    # Change to "Cloud" channel
+# Graceful shutdown handler to set Pixoo channel to "Cloud" when exiting
+def _shutdown(pixoo_device):
+    pixoo_device.generic_set_number("channel", 1)  # Change to "Cloud" channel
     print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Exiting. Setting channel to "Cloud".')
 
 
-# Get JSON data from the API
-def get_data_from_NS():
-    while True:
-        try:
-            NIGHTSCOUT_API = urljoin(NIGHTSCOUT_URL, '/api/v1/entries/sgv.json?count=2')
-            # print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Trying to get data from "{NIGHTSCOUT_URL}" ... ', end='')
-            data = requests.get(NIGHTSCOUT_API, verify=False).json()
-            
-            # Parse the data
-            current_sgv = str(data[0]['sgv'])
-            current_direction = str(data[0]['direction'])
-            delta_value = int(data[0]['sgv'] - data[1]['sgv'])
-            delta = "+" if delta_value > 0 else ""
-            delta += str(delta_value)
-            
-            # print('OK.')
-            return current_sgv, current_direction, delta
-        
-        except Exception as error:
-            print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Nightscout connection failed: {error}')
+# Class to retrieve data from Nightscout and manage the display logic on the Pixoo device
+class DisplayManager:
+    def __init__(self, ns_client: NightscoutClient, pixoo_device: PixooDevice):
+        self.ns_client = ns_client
+        self.pixoo_device = pixoo_device
+        self.width = 20
+        self.height = 35
+        self.arrow_length = 8
+
+    # Draw the latest Nightscout data (SGV, direction, and delta) on the Pixoo display
+    def draw_nightscout(self, border: bool = False):
+        current_sgv, current_direction, delta = self.ns_client.get_latest_sgv()
+
+        if border:
+            self.pixoo_device.draw_border(
+                SCREEN_CENTER - self.width // 2,
+                SCREEN_CENTER - self.height // 2,
+                SCREEN_CENTER + self.width // 2,
+                SCREEN_CENTER + self.height // 2,
+            )
+
+        self.pixoo_device.draw_text(current_sgv, SCREEN_CENTER - 11 // 2, SCREEN_CENTER - self.height // 3)
+
+        if delta != "0":
+            self.pixoo_device.draw_text(delta, SCREEN_CENTER - 3, SCREEN_CENTER - 2)
+
+        self.pixoo_device.draw_arrow(current_direction, SCREEN_CENTER - 7 // 2, SCREEN_CENTER, self.arrow_length)
+
+    # Draw the current time
+    def draw_clock(self):
+        self.pixoo_device.draw_text(datetime.now().strftime("%I:%M %p"), SCREEN_CENTER - 2 - 24 // 2, 6)
+
+    # Main loop to continuously update the display
+    def run(self):
+        while True:
+            self.pixoo_device.draw_fill()  # Clear the screen
+
+            if DEBUG:
+                self.pixoo_device.debug_lines()
+
+            self.pixoo_device.draw_border()  # Draw the outer frame
+            self.draw_clock()
+            self.draw_nightscout(border=True)
+
+            if DEBUG:
+                self.pixoo_device.debug_pixels()
+
+            self.pixoo_device.push()
+
+            sleep(float(CHANNEL_TIME))
+            self.pixoo_device.generic_set_number("channel", 1)  # Change to "Cloud" channel
+            sleep(float(CHANNEL_TIME))
+            self.pixoo_device.generic_set_number("channel", 0)  # Change to "Faces" channel
+            sleep(float(CHANNEL_TIME))
 
 
-# Draw NS data on Pixoo with optional border
-def draw_NS(data, width=PIXOO_SCREEN_SIZE - 1, height=PIXOO_SCREEN_SIZE - 1, center=SCREEN_CENTER, border=False):
-    current_sgv, current_direction, delta = data
-    if border:
-        draw_border(center - width // 2, center - height // 2, center + width // 2, center + height // 2)
-    draw_text(current_sgv, center - 11 // 2, center - height // 3)
-    if delta != "0":
-        draw_text(delta, center - 3, center - 2)
-    draw_arrow("DoubleUp", center - 7 // 2, center, 8)
-
-
-width = 20
-height = 35
-print("Running...")
-while True:
-    draw_fill()     # Clear the screen
+# Main entry point of the application
+def main():
     
-    if DEBUG:
-        debug_lines()
-    draw_border()   # Draw the border
-    draw_text(datetime.now().strftime("%I:%M %p"), SCREEN_CENTER - 2 - 24//2, 6)
-    draw_NS(get_data_from_NS(), width, height, SCREEN_CENTER, True)
-    if DEBUG:
-        debug_pixels()
-    push()
-    
-    sleep(float(CHANNEL_TIME))
-    generic_set_number("channel", 1)    # Change to "Cloud" channel
-    sleep(float(CHANNEL_TIME))
-    generic_set_number("channel", 0)    # Change to "Faces" channel (The design selected via the Divoom app)
-    sleep(float(CHANNEL_TIME))
+    # Initialize clients and check connections
+    ns_client = NightscoutClient(NIGHTSCOUT_URL)
+    pixoo_device = PixooDevice(PIXOO_HOST, PIXOO_SCREEN_SIZE)
+    atexit.register(_shutdown, pixoo_device)
+
+    try:
+        ns_client.check_connection()
+        pixoo_device.check_connection()
+    except Exception as e:
+        print(f"Failed to connect: {e}")
+        return # Exit if we can't connect to either service
+
+
+    # Initialize the DisplayManager with the Nightscout client and Pixoo device
+    display_manager = DisplayManager(ns_client, pixoo_device)
+    print("Running...")
+    display_manager.run()
+
+
+if __name__ == "__main__":
+    main()
 
