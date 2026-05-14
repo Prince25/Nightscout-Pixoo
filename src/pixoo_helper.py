@@ -4,7 +4,7 @@ import time
 import requests
 from PIL import Image
 from datetime import datetime
-from dotenv import load_dotenv, find_dotenv
+from config import PIXOO_HOST, PIXOO_SCREEN_SIZE, PIXOO_RETRY_DELAY
 
 
 # Import from pixoo directory
@@ -12,32 +12,21 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
 from pixoo.pixoo import Channel, Pixoo
 
 
-# Load the environment variables
-dotenv_file = find_dotenv()
-if not dotenv_file:
-    raise FileNotFoundError('No .env file found.')
-load_dotenv(dotenv_file, override=True)
-
-pixoo_host = os.environ.get('PIXOO_HOST')
-pixoo_screen_size = int(os.environ.get('PIXOO_SCREEN_SIZE'))
-retry_delay = os.environ.get('PIXOO_RETRY_DELAY')
-
-
 # Connect to the Pixoo device
 while True:
     try:
-        print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Trying to connect to "{pixoo_host}" ... ', end='')
-        if requests.get(f'http://{pixoo_host}/get').status_code == 200:
+        print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Trying to connect to "{PIXOO_HOST}" ... ', end='')
+        if requests.get(f'http://{PIXOO_HOST}/get').status_code == 200:
             print('OK.')
             break
     except Exception as error:
-        print('FAILED. Sleeping' + retry_delay + 'seconds.')
+        print('FAILED. Sleeping' + PIXOO_RETRY_DELAY + 'seconds.')
         print('ERROR:', error)
-        time.sleep(int(retry_delay))
+        time.sleep(int(PIXOO_RETRY_DELAY))
 
 
 # Initialize the Pixoo object
-pixoo = Pixoo(pixoo_host, pixoo_screen_size)
+pixoo = Pixoo(PIXOO_HOST, PIXOO_SCREEN_SIZE)
 
 
 """ Pixoo Helper Functions
@@ -132,7 +121,7 @@ def draw_line(start_x, start_y, end_x, end_y, r=255, g=255, b=255, push_now=Fals
 
 # Draws a border (non-filled rectangle) from the specified start to end coordinates in the requested color
 # Draws a outline around the screen by default
-def draw_border(top_left_x=0, top_left_y=0, bottom_right_x=pixoo_screen_size-1, bottom_right_y=pixoo_screen_size-1, r=255, g=255, b=255, push_now=False):
+def draw_border(top_left_x=0, top_left_y=0, bottom_right_x=PIXOO_SCREEN_SIZE-1, bottom_right_y=PIXOO_SCREEN_SIZE-1, r=255, g=255, b=255, push_now=False):
     draw_line(top_left_x, top_left_y, bottom_right_x, top_left_y, r, g, b) # Top Horizontal
     draw_line(top_left_x, bottom_right_y, top_left_x, top_left_y, r, g, b) # Left Vertical
     draw_line(bottom_right_x, bottom_right_y, top_left_x, bottom_right_y, r, g, b) # Bottom Horizontal
@@ -217,7 +206,7 @@ def draw_image(filename, x=0, y=0, rotate=0, resize=(None, None), push_now=False
 # Draws an arrow on the screen based on the specified direction, position, length, and color
 # Types: Flat, FortyFiveUp, FortyFiveDown, SingleUp, SingleDown, DoubleUp, DoubleDown
 def draw_arrow(type, start_x, start_y, length=8, r=255, g=255, b=255, push_now=False):
-    if length < 8 or length > pixoo_screen_size: 
+    if length < 8 or length > PIXOO_SCREEN_SIZE: 
         length = 8  # Minimum length is between 8 and the screen size
         print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | draw_arrow length too small. Setting to minimum length of 8.')
 
@@ -249,13 +238,13 @@ def draw_arrow(type, start_x, start_y, length=8, r=255, g=255, b=255, push_now=F
 
 # Debug function: draws vertical and horizontal lines every 8 pixels
 def debug_lines(push_now=False):
-    for i in range(0, pixoo_screen_size, 8):      
+    for i in range(0, PIXOO_SCREEN_SIZE, 8):      
         # Draw vertical lines
-        draw_line(i-1, 0, i-1, pixoo_screen_size - 1, 128, 128, 128)
-        draw_line(i, 0, i, pixoo_screen_size - 1, 128, 128, 128)
+        draw_line(i-1, 0, i-1, PIXOO_SCREEN_SIZE - 1, 128, 128, 128)
+        draw_line(i, 0, i, PIXOO_SCREEN_SIZE - 1, 128, 128, 128)
         # Draw horizontal lines
-        draw_line(0, i-1, pixoo_screen_size - 1, i-1, 128, 128, 128)
-        draw_line(0, i, pixoo_screen_size - 1, i, 128, 128, 128)
+        draw_line(0, i-1, PIXOO_SCREEN_SIZE - 1, i-1, 128, 128, 128)
+        draw_line(0, i, PIXOO_SCREEN_SIZE - 1, i, 128, 128, 128)
     
     if push_now: push()
     return 'OK'
@@ -263,8 +252,8 @@ def debug_lines(push_now=False):
 
 # Debug function: draws pixels at the center and middle of each edge of the screen to help identify coordinates
 def debug_pixels(push_now=False):
-    center = (pixoo_screen_size - 1) // 2
-    max = pixoo_screen_size - 1
+    center = (PIXOO_SCREEN_SIZE - 1) // 2
+    max = PIXOO_SCREEN_SIZE - 1
     
     # Top middle pixels
     draw_pixel(center, 0, 255, 0, 0)
