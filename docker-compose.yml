@@ -9,6 +9,5 @@ services:
       - PIXOO_HOST=${PIXOO_HOST}
       - PIXOO_SCREEN_SIZE=64
       - CHANNEL_TIME=30
-      - RETRY_DELAY=30
       - DEBUG=False
     restart: unless-stopped

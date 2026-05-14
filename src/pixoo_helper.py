@@ -1,10 +1,9 @@
 import os
 import sys
-import time
 import requests
 from PIL import Image
 from datetime import datetime
-from config import PIXOO_HOST, PIXOO_SCREEN_SIZE, PIXOO_RETRY_DELAY
+from config import PIXOO_HOST, PIXOO_SCREEN_SIZE
 
 
 # Import from pixoo directory
@@ -12,20 +11,40 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
 from pixoo.pixoo import Channel, Pixoo
 
 
-# Connect to the Pixoo device
-while True:
+# Attempt to verify connection to Pixoo device via API endpoint
+def check_pixoo_connection():
     try:
-        print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Trying to connect to "{PIXOO_HOST}" ... ', end='')
-        if requests.get(f'http://{PIXOO_HOST}/get').status_code == 200:
-            print('OK.')
-            break
-    except Exception as error:
-        print('FAILED. Sleeping' + PIXOO_RETRY_DELAY + 'seconds.')
-        print('ERROR:', error)
-        time.sleep(int(PIXOO_RETRY_DELAY))
+        print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Trying to connect to Divoom Pixoo device at "{PIXOO_HOST}" ... ', end='')
+        response = requests.get(f'http://{PIXOO_HOST}/get', timeout=5)
+        print('OK.')
+        return response.status_code == 200
+    except Exception as e:
+        print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Pixoo connection failed: {e}')
+        return False
+
+
+# Decorator to retry a pixoo operation if connection is lost
+def with_retry_on_connection_failure(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Operation failed: {e}')
+            
+            if not check_pixoo_connection():
+                raise Exception(f'Pixoo connection lost and cannot be re-established. Original error: {e}')
+            
+            try:
+                print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Retrying operation...')
+                return func(*args, **kwargs)
+            except Exception as retry_error:
+                raise Exception(f'Operation failed on retry: {retry_error}')
+    
+    return wrapper
 
 
 # Initialize the Pixoo object
+check_pixoo_connection()
 pixoo = Pixoo(PIXOO_HOST, PIXOO_SCREEN_SIZE)
 
 
@@ -39,7 +58,7 @@ push()
 draw_pixel(x, y, r=255, g=255, b=255, push_now=False)
 draw_character(character, x=0, y=0, r=255, g=255, b=255, push_now=False)
 draw_line(start_x, start_y, end_x, end_y, r=255, g=255, b=255, push_now=False)
-draw_border(top_left_x=0, top_left_y=0, bottom_right_x=pixoo_screen_size-1, bottom_right_y=pixoo_screen_size-1, r=255, g=255, b=255, push_now=False)
+draw_border(top_left_x=0, top_left_y=0, bottom_right_x=PIXOO_SCREEN_SIZE-1, bottom_right_y=PIXOO_SCREEN_SIZE-1, r=255, g=255, b=255, push_now=False)
 draw_rectangle(top_left_x, top_left_y, bottom_right_x, bottom_right_y, r=255, g=255, b=255, push_now=False)
 draw_fill(r=0, g=0, b=0, push_now=False)
 draw_text(text, x=0, y=0, r=255, g=255, b=255, push_now=False)
@@ -53,6 +72,7 @@ draw_arrow(type, start_x, start_y, length=8, r=255, g=255, b=255, push_now=False
 # Available channels are: FACES (0) (The design selected via the Divoom app), CLOUD (1), VISUALIZER (2), and CUSTOM (3, 4, and 5)
 # The clock id is a number that corresponds to the installed clocks on your device
 # The visualizer id is a number that corresponds to the installed visualizers on your device
+@with_retry_on_connection_failure
 def generic_set_number(to_set, number):
     if to_set == 'channel':
         pixoo.set_channel(Channel(number))
@@ -64,10 +84,12 @@ def generic_set_number(to_set, number):
 
 
 # Pushes the buffer to the device
+@with_retry_on_connection_failure
 def push(): pixoo.push()
 
 
 # Draws a pixel at the specified coordinates in the requested color
+@with_retry_on_connection_failure
 def draw_pixel(x, y, r=255, g=255, b=255, push_now=False):
     pixoo.draw_pixel_at_location_rgb(
         int(x),
@@ -89,6 +111,7 @@ abcdefghijklmnopqrstuvwxyz
 ABCDEFGHIJKLMNOPQRSTUVWXYZ
 !'()+,-<=>?[]^_:;./{|}~$@%
 """
+@with_retry_on_connection_failure
 def draw_character(character, x=0, y=0, r=255, g=255, b=255, push_now=False):
     pixoo.draw_character_at_location_rgb(
         character,
@@ -104,6 +127,7 @@ def draw_character(character, x=0, y=0, r=255, g=255, b=255, push_now=False):
 
 
 # Draws a line from the specified start to end coordinates in the requested color
+@with_retry_on_connection_failure
 def draw_line(start_x, start_y, end_x, end_y, r=255, g=255, b=255, push_now=False):
     pixoo.draw_line_from_start_to_stop_rgb(
         int(start_x),
@@ -121,6 +145,7 @@ def draw_line(start_x, start_y, end_x, end_y, r=255, g=255, b=255, push_now=Fals
 
 # Draws a border (non-filled rectangle) from the specified start to end coordinates in the requested color
 # Draws a outline around the screen by default
+@with_retry_on_connection_failure
 def draw_border(top_left_x=0, top_left_y=0, bottom_right_x=PIXOO_SCREEN_SIZE-1, bottom_right_y=PIXOO_SCREEN_SIZE-1, r=255, g=255, b=255, push_now=False):
     draw_line(top_left_x, top_left_y, bottom_right_x, top_left_y, r, g, b) # Top Horizontal
     draw_line(top_left_x, bottom_right_y, top_left_x, top_left_y, r, g, b) # Left Vertical
@@ -131,6 +156,7 @@ def draw_border(top_left_x=0, top_left_y=0, bottom_right_x=PIXOO_SCREEN_SIZE-1, 
 
 
 # Draws a filled rectangle from the specified start to end coordinates in the requested color
+@with_retry_on_connection_failure
 def draw_rectangle(top_left_x, top_left_y, bottom_right_x, bottom_right_y, r=255, g=255, b=255, push_now=False):
     pixoo.draw_filled_rectangle_from_top_left_to_bottom_right_rgb(
         int(top_left_x),
@@ -148,6 +174,7 @@ def draw_rectangle(top_left_x, top_left_y, bottom_right_x, bottom_right_y, r=255
 
 # Fills screen with the specified color
 # Clears the screen by default
+@with_retry_on_connection_failure
 def draw_fill(r=0, g=0, b=0, push_now=False):
     pixoo.fill_rgb(
         int(r),
@@ -160,6 +187,7 @@ def draw_fill(r=0, g=0, b=0, push_now=False):
 
 
 # Draws the specified text at the specified position in the specified color
+@with_retry_on_connection_failure
 def draw_text(text, x=0, y=0, r=255, g=255, b=255, push_now=False):
     pixoo.draw_text_at_location_rgb(
         text,
@@ -175,6 +203,7 @@ def draw_text(text, x=0, y=0, r=255, g=255, b=255, push_now=False):
 
 
 # Draws the specified image at the specified position
+@with_retry_on_connection_failure
 def draw_image(filename, x=0, y=0, rotate=0, resize=(None, None), push_now=False):
     filename = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'assets', filename))
     image = Image.open(filename)
@@ -205,6 +234,7 @@ def draw_image(filename, x=0, y=0, rotate=0, resize=(None, None), push_now=False
 
 # Draws an arrow on the screen based on the specified direction, position, length, and color
 # Types: Flat, FortyFiveUp, FortyFiveDown, SingleUp, SingleDown, DoubleUp, DoubleDown
+@with_retry_on_connection_failure
 def draw_arrow(type, start_x, start_y, length=8, r=255, g=255, b=255, push_now=False):
     if length < 8 or length > PIXOO_SCREEN_SIZE: 
         length = 8  # Minimum length is between 8 and the screen size
@@ -237,6 +267,7 @@ def draw_arrow(type, start_x, start_y, length=8, r=255, g=255, b=255, push_now=F
 
 
 # Debug function: draws vertical and horizontal lines every 8 pixels
+@with_retry_on_connection_failure
 def debug_lines(push_now=False):
     for i in range(0, PIXOO_SCREEN_SIZE, 8):      
         # Draw vertical lines
@@ -251,6 +282,7 @@ def debug_lines(push_now=False):
 
 
 # Debug function: draws pixels at the center and middle of each edge of the screen to help identify coordinates
+@with_retry_on_connection_failure
 def debug_pixels(push_now=False):
     center = (PIXOO_SCREEN_SIZE - 1) // 2
     max = PIXOO_SCREEN_SIZE - 1

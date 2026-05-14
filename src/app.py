@@ -1,4 +1,5 @@
 import atexit
+from time import sleep
 from pixoo_helper import *
 from urllib.parse import urljoin
 from config import (
@@ -39,9 +40,7 @@ def get_data_from_NS():
             return current_sgv, current_direction, delta
         
         except Exception as error:
-            print('FAILED. Sleeping' + PIXOO_RETRY_DELAY + 'seconds.')
-            print('ERROR:', error)
-            time.sleep(int(PIXOO_RETRY_DELAY))
+            print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Nightscout connection failed: {error}')
 
 
 # Draw NS data on Pixoo with optional border
@@ -60,6 +59,7 @@ height = 35
 print("Running...")
 while True:
     draw_fill()     # Clear the screen
+    
     if DEBUG:
         debug_lines()
     draw_border()   # Draw the border
@@ -68,9 +68,10 @@ while True:
     if DEBUG:
         debug_pixels()
     push()
-    time.sleep(float(CHANNEL_TIME))
+    
+    sleep(float(CHANNEL_TIME))
     generic_set_number("channel", 1)    # Change to "Cloud" channel
-    time.sleep(float(CHANNEL_TIME))
-    generic_set_number("channel", 0)    # Change to "Faces" channel
-    time.sleep(float(CHANNEL_TIME))
+    sleep(float(CHANNEL_TIME))
+    generic_set_number("channel", 0)    # Change to "Faces" channel (The design selected via the Divoom app)
+    sleep(float(CHANNEL_TIME))
 
