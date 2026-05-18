@@ -32,7 +32,8 @@ class NightscoutClient:
         previous = data[1]
         current_sgv = str(current['sgv'])
         current_direction = str(current.get('direction', ''))
+        time = current['dateString']
         delta_value = int(current['sgv'] - previous['sgv'])
         delta = f"{'+' if delta_value > 0 else ''}{delta_value}"
 
-        return current_sgv, current_direction, delta
+        return current_sgv, current_direction, delta, time

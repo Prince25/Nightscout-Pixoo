@@ -57,6 +57,13 @@ class PixooDevice:
         return 'OK'
 
     # Draws a single character at the specified coordinates in the requested color
+    """
+    Supported characters so far are:
+    0123456789
+    abcdefghijklmnopqrstuvwxyz
+    ABCDEFGHIJKLMNOPQRSTUVWXYZ
+    !'()+,-<=>?[]^_:;./{|}~$@%
+    """
     @with_retry_on_connection_failure
     def draw_character(self, character, x=0, y=0, r=255, g=255, b=255, push_now=False):
         self.pixoo.draw_character_at_location_rgb(character, int(x), int(y), int(r), int(g), int(b))
@@ -113,30 +120,40 @@ class PixooDevice:
         
         return 'OK'
 
-    # Draws the specified image at the specified position
+    # Draws the specified image from the assets/images directory at the specified position
     @with_retry_on_connection_failure
     def draw_image(self, filename, x=0, y=0, rotate=0, resize=(None, None), push_now=False):
-        filename = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'assets', filename))
-        image = Image.open(filename)
-
-        # Convert PNG to RGBA
-        if filename.endswith('.png'):
-            image = Image.open(filename).convert('RGBA')
-            background = Image.new('RGBA', image.size, (0, 0, 0))
-            image = Image.alpha_composite(background, image)
-
-        # Rotate the image if needed
-        if rotate != 0:
-            image = image.rotate(rotate, expand=True)
-
-        # Resize the image if needed
-        if resize != (None, None):
-            image = image.resize(resize, Image.BICUBIC)
-
-        self.pixoo.draw_image_at_location(image, int(x), int(y))
+        # If it's a PIL image object, use it directly instead of loading from file
+        if isinstance(filename, Image.Image):
+            image = filename
+            if rotate != 0:
+                image = image.rotate(rotate, expand=True)
+            if resize != (None, None):
+                image = image.resize(resize, Image.BICUBIC)
+            self.pixoo.draw_image_at_location(image, int(x), int(y))
         
+        else:
+            # Load the image from the assets/images directory
+            filename = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'assets/images', filename))
+            image = Image.open(filename)
+
+            # Convert PNG to RGBA
+            if filename.endswith('.png'):
+                image = image.convert('RGBA')
+                background = Image.new('RGBA', image.size, (0, 0, 0))
+                image = Image.alpha_composite(background, image)
+
+            # Rotate the image if needed
+            if rotate != 0:
+                image = image.rotate(rotate, expand=True)
+
+            # Resize the image if needed
+            if resize != (None, None):
+                image = image.resize(resize, Image.BICUBIC)
+
+            self.pixoo.draw_image_at_location(image, int(x), int(y))
+
         if push_now: self.push()
-        
         return 'OK'
 
     # Draws an arrow on the screen based on the specified direction, position, length, and color
