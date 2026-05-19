@@ -2,15 +2,15 @@ import os
 from datetime import datetime
 from dotenv import load_dotenv, find_dotenv
 
-# Load the environment variables
-try:
-    dotenv_file = find_dotenv()
-    if not dotenv_file:
-        raise FileNotFoundError('No .env file found.')
-    load_dotenv(dotenv_file, override=True)
-except Exception as e:
-    print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Failed to load environment: {e}")
-    raise
+# Load the environment variables from a .env file if present.
+# This is optional so Docker Compose or shell environment can provide values directly.
+dotenv_file = find_dotenv()
+if dotenv_file:
+    try:
+        load_dotenv(dotenv_file, override=True)
+    except Exception as e:
+        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Failed to load .env file: {e}")
+        raise
 
 # Convert hex to RGB tuple
 def hex_to_rgb(hex_color):

@@ -56,7 +56,8 @@ On Windows PowerShell:
 Copy-Item .env-example .env
 ```
 
-The app reads configuration from `.env` in the repository root.
+The app reads configuration from `.env` in the repository root when running directly with Python.
+For Docker Compose, `.env` is optional; the container can receive env vars directly from the Compose file or from the shell environment.
 
 See [environment variables](#environment-variables) section for details.
 

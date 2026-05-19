@@ -6,6 +6,6 @@ services:
     image: princes25/nightscout-pixoo:latest
     restart: on-failure:5
     environment:
-      - NIGHTSCOUT_URL=
-      - PIXOO_HOST=
+      - NIGHTSCOUT_URL: "https://your-nightscout.herokuapp.com"   # Change this to your instance
+      - PIXOO_HOST: "192.168.1.1"                                 # Change this to your Pixoo's IP
     
