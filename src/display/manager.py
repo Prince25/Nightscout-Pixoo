@@ -1,0 +1,96 @@
+from time import sleep
+from datetime import datetime, timezone
+from config import (
+    CHANNEL_TIME,
+    LAYOUT,
+    SHOW_CLOUD,
+    SHOW_FACES,
+    GLUCOSE_URGENT_LOW,
+    GLUCOSE_LOW,
+    GLUCOSE_NORMAL_MAX,
+    GLUCOSE_HIGH,
+    COLOR_URGENT_LOW,
+    COLOR_LOW,
+    COLOR_NORMAL,
+    COLOR_HIGH,
+    COLOR_URGENT_HIGH,
+)
+from integrations.pixoo import PixooDevice
+from integrations.nightscout import NightscoutClient
+from .renderers.pixoo_renderer import PixooRenderer
+from .renderers.pil_renderer import PilRenderer
+
+
+# Class to retrieve data from Nightscout and manage the display logic on the Pixoo device
+class DisplayManager:
+    def __init__(self, ns_client: NightscoutClient, pixoo_device: PixooDevice, pixoo_renderer=None, pil_renderer=None):
+        self.ns_client = ns_client
+        self.pixoo_device = pixoo_device
+        self.pixoo_renderer = pixoo_renderer or PixooRenderer(self.pixoo_device)
+        self.pil_renderer = pil_renderer or PilRenderer()
+
+    # Parse the latest Nightscout response and return shared values
+    def _get_latest_nightscout_info(self):
+        current_sgv, current_direction, delta, time = self.ns_client.get_latest_sgv()
+
+        # Calculate how long ago the data point was from the current time
+        data_time = datetime.fromisoformat(time.replace('Z', '+00:00'))
+        now = datetime.now(timezone.utc)
+        time_diff = now - data_time
+        time_diff_minutes = int(time_diff.total_seconds() // 60)
+        add_s = 's' if time_diff_minutes != 1 else '' # Add 's' for plural minutes
+        time_ago_str = f"{time_diff_minutes} min{add_s} ago" if time_diff_minutes > 0 else "Just now" # Show "Just now" for 0 minutes difference
+
+        return current_sgv, current_direction, delta, time_ago_str
+
+    # Choose the SGV color based on configured thresholds
+    def _get_glucose_color(self, sgv_str: str):
+        try:
+            sgv = int(sgv_str)
+        except (TypeError, ValueError):
+            return COLOR_NORMAL
+
+        if sgv < GLUCOSE_URGENT_LOW:
+            return COLOR_URGENT_LOW
+        if sgv < GLUCOSE_LOW:
+            return COLOR_LOW
+        if sgv <= GLUCOSE_NORMAL_MAX:
+            return COLOR_NORMAL
+        if sgv < GLUCOSE_HIGH:
+            return COLOR_HIGH
+        return COLOR_URGENT_HIGH
+
+    # Draw the latest Nightscout data using Pixoo primitives
+    def draw_nightscout_info(self):
+        current_sgv, current_direction, delta, time_diff_str = self._get_latest_nightscout_info()
+        self.pixoo_renderer.render(current_sgv, delta, current_direction, time_diff_str, self._get_glucose_color)
+
+    # Draw the latest Nightscout data using PIL rendering
+    def draw_nightscout_info_pil(self):
+        current_sgv, current_direction, delta, time_diff_str = self._get_latest_nightscout_info()
+        processed_img = self.pil_renderer.render(current_sgv, delta, current_direction, time_diff_str, self._get_glucose_color)
+        self.pixoo_device.draw_image(processed_img, 0, 0)
+
+    # Main loop to continuously update the display
+    def run(self):
+        while True:
+            self.pixoo_device.draw_fill()   # Clear the screen
+
+            # Draw using Pixoo primitives
+            if LAYOUT == 'v1':
+                self.draw_nightscout_info()     
+            else: # Draw using PIL rendering for enhanced visuals
+                self.draw_nightscout_info_pil() 
+                
+            self.pixoo_device.push()
+            sleep(float(CHANNEL_TIME))
+            
+            # Change to "Cloud" channel
+            if SHOW_CLOUD:
+                self.pixoo_device.generic_set_number('channel', 1)
+                sleep(float(CHANNEL_TIME))
+
+            # Change to "Faces" channel
+            if SHOW_FACES:
+                self.pixoo_device.generic_set_number('channel', 0)
+                sleep(float(CHANNEL_TIME))
