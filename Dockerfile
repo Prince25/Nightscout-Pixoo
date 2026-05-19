@@ -1,5 +1,5 @@
 # Use Python 3.13.5 base image
-FROM python:3.13.5-slim
+FROM python:3.13.5
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -17,5 +17,5 @@ RUN git submodule update --init --recursive
 # Install pip dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Command to run the application
-CMD ["python", "src/app.py"]
+# Entrypoint to run the application
+ENTRYPOINT ["python", "src/app.py"]
