@@ -3,10 +3,9 @@ version: '3.8'
 services:
   nightscout-pixoo:
     container_name: nightscout-pixoo
-    build: .
+    image: princes25/nightscout-pixoo:latest
+    restart: on-failure:5
     environment:
       - NIGHTSCOUT_URL=${NIGHTSCOUT_URL}
       - PIXOO_HOST=${PIXOO_HOST}
-      - PIXOO_SCREEN_SIZE=64
-      - CHANNEL_TIME=30
-    restart: unless-stopped
+    
