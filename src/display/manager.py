@@ -2,7 +2,6 @@ from time import sleep
 from datetime import datetime, timezone
 from config import (
     CHANNEL_TIME,
-    DEBUG,
     SCREEN_CENTER,
     GLUCOSE_URGENT_LOW,
     GLUCOSE_LOW,

@@ -1,10 +1,11 @@
 from datetime import datetime
 from integrations.pixoo import PixooDevice
 from config import (
-    DEBUG,
     PIXOO_SCREEN_SIZE,
     SCREEN_CENTER,
 )
+
+DRAW_GUIDES = False  # Set to True to draw guides for debugging layout
 
 # Renderer class using the Pixoo primitive library
 class PixooRenderer:
@@ -12,8 +13,8 @@ class PixooRenderer:
         self.device = device
 
     def render(self, sgv, delta, direction, time_ago, glucose_color_func):
-        if DEBUG:
-            self.device.debug_lines()
+        if DRAW_GUIDES:
+            self.device.draw_guide_lines()
 
         self.device.draw_border()  # Draw the outer frame
         self.device.draw_text(
@@ -78,5 +79,5 @@ class PixooRenderer:
             PIXOO_SCREEN_SIZE - (spacing + font_height),
         )
 
-        if DEBUG:
-            self.device.debug_pixels()
+        if DRAW_GUIDES:
+            self.device.draw_guide_pixels()

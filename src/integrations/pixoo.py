@@ -181,9 +181,9 @@ class PixooDevice:
         else:
             self.draw_image('right_arrow.png', start_x, start_y, rotate=0, resize=(length, length), push_now=push_now)
 
-    # Debug function: draws vertical and horizontal lines every 8 pixels
+    # Guide function: draws vertical and horizontal lines every 8 pixels
     @with_retry_on_connection_failure
-    def debug_lines(self, push_now=False):
+    def draw_guide_lines(self, push_now=False):
         for i in range(0, self.screen_size, 8):
             # Draw vertical lines
             self.draw_line(i - 1, 0, i - 1, self.screen_size - 1, 128, 128, 128)
@@ -197,9 +197,9 @@ class PixooDevice:
         
         return 'OK'
 
-    # Debug function: draws pixels at the center and middle of each edge of the screen to help identify coordinates
+    # Guide function: draws pixels at the center and middle of each edge of the screen to help identify coordinates
     @with_retry_on_connection_failure
-    def debug_pixels(self, push_now=False):
+    def draw_guide_pixels(self, push_now=False):
         center = (self.screen_size - 1) // 2
         max_val = self.screen_size - 1
 

@@ -18,7 +18,6 @@ PIXOO_HOST = os.environ.get('PIXOO_HOST')
 PIXOO_SCREEN_SIZE = int(os.environ.get('PIXOO_SCREEN_SIZE'))
 NIGHTSCOUT_URL = os.environ.get('NIGHTSCOUT_URL')
 CHANNEL_TIME = os.environ.get('CHANNEL_TIME')
-DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
 
 # Glucose thresholds
