@@ -37,8 +37,9 @@ class DisplayManager:
         time_diff = now - data_time
         time_diff_minutes = int(time_diff.total_seconds() // 60)
         add_s = 's' if time_diff_minutes != 1 else '' # Add 's' for plural minutes
+        time_ago_str = f"{time_diff_minutes} min{add_s} ago" if time_diff_minutes > 0 else "Just now" # Show "Just now" for 0 minutes difference
 
-        return current_sgv, current_direction, delta, f"{time_diff_minutes} min{add_s} ago"
+        return current_sgv, current_direction, delta, time_ago_str
 
     # Choose the SGV color based on configured thresholds
     def _get_glucose_color(self, sgv_str: str):
