@@ -68,12 +68,6 @@ class DisplayManager:
         processed_img = self.pil_renderer.render(current_sgv, delta, current_direction, time_diff_str, self._get_glucose_color)
         self.pixoo_device.draw_image(processed_img, 0, 0)
 
-    # Draw the current time
-    def draw_clock(self):
-        x = SCREEN_CENTER - (8 * 4 // 2)  # Center the clock text (4 pixels per character and max 8 characters for time)
-        y = 6
-        self.pixoo_device.draw_text(datetime.now().strftime('%I:%M %p'), x, y)
-
     # Main loop to continuously update the display
     def run(self):
         while True:
