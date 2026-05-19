@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 from config import (
     CHANNEL_TIME,
     LAYOUT,
+    SHOW_CLOUD,
+    SHOW_FACES,
     GLUCOSE_URGENT_LOW,
     GLUCOSE_LOW,
     GLUCOSE_NORMAL_MAX,
@@ -83,8 +85,12 @@ class DisplayManager:
             self.pixoo_device.push()
             sleep(float(CHANNEL_TIME))
             
-            self.pixoo_device.generic_set_number('channel', 1)  # Change to "Cloud" channel
-            sleep(float(CHANNEL_TIME))
+            # Change to "Cloud" channel
+            if SHOW_CLOUD:
+                self.pixoo_device.generic_set_number('channel', 1)
+                sleep(float(CHANNEL_TIME))
 
-            self.pixoo_device.generic_set_number('channel', 0)  # Change to "Faces" channel
-            sleep(float(CHANNEL_TIME))
+            # Change to "Faces" channel
+            if SHOW_FACES:
+                self.pixoo_device.generic_set_number('channel', 0)
+                sleep(float(CHANNEL_TIME))

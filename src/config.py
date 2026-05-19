@@ -19,6 +19,8 @@ PIXOO_SCREEN_SIZE = int(os.environ.get('PIXOO_SCREEN_SIZE'))
 NIGHTSCOUT_URL = os.environ.get('NIGHTSCOUT_URL')
 CHANNEL_TIME = os.environ.get('CHANNEL_TIME')
 LAYOUT = os.environ.get('LAYOUT', 'v2')  # Default to v2 if not set
+SHOW_CLOUD = os.environ.get('SHOW_CLOUD', 'True').lower() in ('true', '1', 'yes')
+SHOW_FACES = os.environ.get('SHOW_FACES', 'False').lower() in ('true', '1', 'yes')
 
 
 # Glucose thresholds
