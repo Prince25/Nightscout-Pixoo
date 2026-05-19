@@ -2,7 +2,7 @@ from time import sleep
 from datetime import datetime, timezone
 from config import (
     CHANNEL_TIME,
-    SCREEN_CENTER,
+    LAYOUT,
     GLUCOSE_URGENT_LOW,
     GLUCOSE_LOW,
     GLUCOSE_NORMAL_MAX,
@@ -73,15 +73,16 @@ class DisplayManager:
         while True:
             self.pixoo_device.draw_fill()   # Clear the screen
 
-            self.draw_nightscout_info()     # Draw using Pixoo primitives
+            # Draw using Pixoo primitives
+            if LAYOUT == 'v1':
+                self.draw_nightscout_info()     
+            else: # Draw using PIL rendering for enhanced visuals
+                self.draw_nightscout_info_pil() 
+                
             self.pixoo_device.push()
             sleep(float(CHANNEL_TIME))
-
+            
             self.pixoo_device.generic_set_number('channel', 1)  # Change to "Cloud" channel
-            sleep(float(CHANNEL_TIME))
-
-            self.draw_nightscout_info_pil() # Draw using PIL rendering for enhanced visuals
-            self.pixoo_device.push()
             sleep(float(CHANNEL_TIME))
 
             self.pixoo_device.generic_set_number('channel', 0)  # Change to "Faces" channel
