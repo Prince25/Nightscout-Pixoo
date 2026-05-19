@@ -6,6 +6,6 @@ services:
     image: princes25/nightscout-pixoo:latest
     restart: on-failure:5
     environment:
-      - NIGHTSCOUT_URL=${NIGHTSCOUT_URL}
-      - PIXOO_HOST=${PIXOO_HOST}
+      - NIGHTSCOUT_URL=
+      - PIXOO_HOST=
     
