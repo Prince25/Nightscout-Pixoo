@@ -22,12 +22,12 @@ def main():
         ns_client.check_connection()
         pixoo_device.check_connection()
     except Exception as e:
-        print(f"Failed to connect: {e}")
+        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Failed to connect: {e}")
         return # Exit if we can't connect to either service
 
     # Initialize the DisplayManager with the Nightscout client and Pixoo device
     display_manager = DisplayManager(ns_client, pixoo_device)
-    print("Running...")
+    print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Running...")
     display_manager.run()
 
 

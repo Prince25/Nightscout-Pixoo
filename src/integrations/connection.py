@@ -22,14 +22,10 @@ def check_connection(url: str, service_name: str, timeout: float = 5, verify: bo
         if response.status_code != 200:
             raise Exception(f'{service_name} returned status {response.status_code}')
 
-        print(
-            f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Trying to connect to {service_name} at "{url}" ... OK.'
-        )
+        print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Trying to connect to {service_name} at "{url}" ... OK.')
         return True
     except Exception as e:
-        print(
-            f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | {service_name} connection failed: {e}'
-        )
+        print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | {service_name} connection failed: {e}')
         raise
 
 
