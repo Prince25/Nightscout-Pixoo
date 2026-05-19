@@ -2,11 +2,11 @@ import os
 import sys
 from PIL import Image
 from datetime import datetime
-from connection_helper import check_connection, with_retry_on_connection_failure
+from integrations.connection import check_connection, with_retry_on_connection_failure
 
 
 # Import from pixoo directory
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from pixoo.pixoo import Channel, Pixoo
 
 
@@ -55,7 +55,7 @@ class PixooDevice:
         if push_now: self.push()
         
         return 'OK'
-
+    
     # Draws a single character at the specified coordinates in the requested color
     """
     Supported characters so far are:
@@ -134,7 +134,7 @@ class PixooDevice:
         
         else:
             # Load the image from the assets/images directory
-            filename = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'assets/images', filename))
+            filename = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'assets', 'images', filename))
             image = Image.open(filename)
 
             # Convert PNG to RGBA

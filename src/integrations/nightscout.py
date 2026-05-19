@@ -1,6 +1,6 @@
 from urllib.parse import urljoin
 from config import NIGHTSCOUT_URL
-from connection_helper import check_connection, make_request, with_retry_on_connection_failure
+from integrations.connection import check_connection, make_request, with_retry_on_connection_failure
 
 
 # Nightscout API Client
