@@ -79,4 +79,4 @@ docker-compose up
 
 
 ## License
-Please read the [LICENSE](LICENSE) file.
+[Attribution-NonCommercial-ShareAlike 4.0 International](LICENSE)
