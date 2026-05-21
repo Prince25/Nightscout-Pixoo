@@ -1,4 +1,5 @@
-import atexit
+import sys
+import signal
 from datetime import datetime
 from config import NIGHTSCOUT_URL, PIXOO_HOST, PIXOO_SCREEN_SIZE
 from integrations.pixoo import PixooDevice
@@ -8,15 +9,24 @@ from display.manager import DisplayManager
 
 # Graceful shutdown handler to set Pixoo channel to "Cloud" when exiting
 def _shutdown(pixoo_device):
-    pixoo_device.generic_set_number("channel", 1)  # Change to "Cloud" channel
-    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Exiting. Setting channel to "Cloud".')
+    print(f"{datetime.now():%Y-%m-%d %H:%M:%S} | Shutting down...")
+    try:
+        pixoo_device.generic_set_number("channel", 1)  # Change to "Cloud" channel
+        print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Setting channel to "Cloud".')
+    except Exception as e:
+        print(f"Shutdown error: {e}")
+        
+    sys.exit(0)
 
 
 def main():
     # Initialize clients and check connections
     ns_client = NightscoutClient(NIGHTSCOUT_URL)
     pixoo_device = PixooDevice(PIXOO_HOST, PIXOO_SCREEN_SIZE)
-    atexit.register(_shutdown, pixoo_device)
+    
+    # Shutdown handlers for graceful exit
+    signal.signal(signal.SIGTERM, lambda s, f: _shutdown(pixoo_device))
+    signal.signal(signal.SIGINT, lambda s, f: _shutdown(pixoo_device))
 
     try:
         ns_client.check_connection()
