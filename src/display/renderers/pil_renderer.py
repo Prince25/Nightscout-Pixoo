@@ -40,7 +40,7 @@ class PilRenderer:
         draw = ImageDraw.Draw(img)
 
         # Load fonts
-        font_large = ImageFont.truetype('assets/fonts/pixel_font-7.ttf', 36)
+        font_large = ImageFont.truetype('assets/fonts/pixel_font-7.ttf', 32)
         font_medium = ImageFont.truetype('assets/fonts/thin_pixel-7.ttf', 20)
         font_small = ImageFont.truetype('assets/fonts/Micro5.ttf', 14)
 
