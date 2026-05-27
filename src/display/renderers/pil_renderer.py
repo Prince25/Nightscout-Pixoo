@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from integrations.logger import log
 from PIL import Image, ImageDraw, ImageFont
 from config import (
     PIXOO_SCREEN_SIZE,
@@ -31,7 +31,7 @@ class PilRenderer:
                 arrow = arrow.rotate(rotation, expand=False)
             return arrow.resize((size, size), Image.LANCZOS)
         except Exception as e:
-            print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Error loading arrow image: {e}')
+            log(f'Error loading arrow image: {e}')
             return Image.new('RGBA', (size, size), (0, 0, 0, 0))
 
     # Build the PIL image for the enhanced Nightscout display
