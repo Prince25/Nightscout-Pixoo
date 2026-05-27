@@ -17,5 +17,5 @@ RUN git submodule update --init --recursive
 # Install pip dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Entrypoint to run the application
-ENTRYPOINT ["python", "src/app.py"]
+# Entrypoint to run the application unbuffered
+ENTRYPOINT ["python", "-u", "src/app.py"]

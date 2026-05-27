@@ -1,6 +1,6 @@
 import os
-from datetime import datetime
 from dotenv import load_dotenv, find_dotenv
+from integrations.logger import log
 
 # Load the environment variables from a .env file if present.
 # This is optional so Docker Compose or shell environment can provide values directly.
@@ -9,7 +9,7 @@ if dotenv_file:
     try:
         load_dotenv(dotenv_file, override=True)
     except Exception as e:
-        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Failed to load .env file: {e}")
+        log(f"Failed to load .env file: {e}")
         raise
 
 # Convert hex to RGB tuple
@@ -28,7 +28,7 @@ try:
     SHOW_CLOUD = os.environ.get('SHOW_CLOUD', 'True').lower() in ('true', '1', 'yes')
     SHOW_FACES = os.environ.get('SHOW_FACES', 'False').lower() in ('true', '1', 'yes')
 except Exception as e:
-    print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Failed to parse environment variables: {e}")
+    log(f"Failed to parse environment variables: {e}")
     raise
 
 
@@ -39,7 +39,7 @@ try:
     GLUCOSE_NORMAL_MAX = int(os.environ.get('GLUCOSE_NORMAL_MAX', 150))
     GLUCOSE_HIGH = int(os.environ.get('GLUCOSE_HIGH', 300))
 except Exception as e:
-    print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Failed to parse glucose thresholds: {e}")
+    log(f"Failed to parse glucose thresholds: {e}")
     raise
 
 
@@ -51,7 +51,7 @@ try:
     COLOR_HIGH = hex_to_rgb(os.environ.get('COLOR_HIGH', '#FF9900'))
     COLOR_URGENT_HIGH = hex_to_rgb(os.environ.get('COLOR_URGENT_HIGH', '#FF0000'))
 except Exception as e:
-    print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Failed to parse color thresholds: {e}")
+    log(f"Failed to parse color thresholds: {e}")
     raise
 
 
@@ -79,5 +79,5 @@ try:
     if not host_ok:
         raise ValueError("PIXOO_HOST does not look like a valid hostname or IP.")
 except Exception as e:
-    print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Config error: {e}")
+    log(f"Config error: {e}")
     raise

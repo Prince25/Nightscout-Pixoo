@@ -1,7 +1,7 @@
 import os
 import sys
 from PIL import Image
-from datetime import datetime
+from integrations.logger import log
 from integrations.connection import check_connection, with_retry_on_connection_failure
 
 
@@ -162,7 +162,7 @@ class PixooDevice:
     def draw_arrow(self, type, start_x, start_y, length=8, r=255, g=255, b=255, push_now=False):
         if length < 8 or length > self.screen_size:
             length = 8
-            print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | draw_arrow length too small. Setting to minimum length of 8.')
+            log('draw_arrow length too small. Setting to minimum length of 8.')
 
         if type == 'Flat':
             self.draw_image('right_arrow.png', start_x, start_y, rotate=0, resize=(length, length), push_now=push_now)
